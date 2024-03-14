@@ -4,12 +4,14 @@ const express = require('express');
 
 const app = express();
 const PORT = 3001;
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.listen(PORT, () => console.log(`Running Express Server on PORT ${PORT}!`));
 
 app.get('/animeList', async (request, response) => {
     try {
-        const animeList = await fetchAnime();
+        const animeList = await fetchAnimeList();
         response.send(animeList);
     } catch (error) {
         console.error(error);
@@ -17,7 +19,27 @@ app.get('/animeList', async (request, response) => {
     }
 });
 
-const fetchAnime = async () => {
+app.get('/animeMovie', async (request, response) => {
+    try {
+        const animeMovie = await fetchAnimeMovies();
+        response.send(animeMovie);
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/animePopular', async (request, response) => {
+    try {
+        const animePopular = await fetchPopularAnime();
+        response.send(animePopular);
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Internal Server Error');
+    }
+});
+
+const fetchAnimeList = async () => {
     try {
         const response = await axios.get('https://www.gogoanime.fi/');
         const html = response.data;
@@ -29,8 +51,6 @@ const fetchAnime = async () => {
             const anime_title = anime.find('.name a').text().trim();
             const anime_url = anime.find('.name a').attr('href');
             const image_url = anime.find('img').attr('src');
-
-            // Extract anime ID from anime_url
             const anime_id = anime_url.split('/').pop();
 
             animeList.push({ anime_title, anime_url, anime_id, image_url });
@@ -42,24 +62,14 @@ const fetchAnime = async () => {
     }
 };
 
-
-app.get('/animeMovie', async (request, response) => {
-    try {
-        const animeMovie = await fetchMovies();
-        response.send(animeMOVIE);
-    } catch (error) {
-        console.error(error);
-        response.status(500).send('Internal Server Error');
-    }
-});
-
-const fetchMovies = async () => {
+const fetchAnimeMovies = async () => {
     try {
         const response = await axios.get('https://www.gogoanime.tw/anime-movies');
         const html = response.data;
         const $ = cheerio.load(html);
         const animeMovie = [];
 
+       
         $('.last_episodes').each((index, element) => {
             const anime = $(element);
             const anime_title = anime.find('.name a').text().trim();
@@ -67,10 +77,9 @@ const fetchMovies = async () => {
             const image_url = anime.find('img').attr('src');
             const released = anime.find('released').text;
 
-            // Extract anime ID from anime_url
             const anime_id = anime_url.split('/').pop();
 
-            animeMovie.push({ anime_title, anime_url, anime_id, image_url , released });
+            animeMovie.push({ anime_title, anime_url, anime_id, image_url, released });
         });
 
         return animeMovie;
@@ -80,25 +89,14 @@ const fetchMovies = async () => {
     }
 };
 
-
-
-app.get('/animepopular', async (request, response) => {
-    try {
-        const animePOPULAR = await fetchpopular();
-        response.send(animeMOVIE);
-    } catch (error) {
-        console.error(error);
-        response.status(500).send('Internal Server Error');
-    }
-});
-
-const fetchpopular = async () => {
+const fetchPopularAnime = async () => {
     try {
         const response = await axios.get('https://www.gogoanime.tw/anime-movies');
         const html = response.data;
         const $ = cheerio.load(html);
-        const animePOPULAR = [];
+        const animePopular = [];
 
+        
         $('.last_episodes').each((index, element) => {
             const anime = $(element);
             const anime_title = anime.find('.name a').text().trim();
@@ -106,18 +104,14 @@ const fetchpopular = async () => {
             const image_url = anime.find('img').attr('src');
             const anime_released = anime.find('released').text;
 
-            // Extract anime ID from anime_url
             const anime_id = anime_url.split('/').pop();
 
-            animePOPULAR.push({ anime_title, anime_url, anime_id, image_url , anime_released });
+            animePopular.push({ anime_title, anime_url, anime_id, image_url, anime_released });
         });
 
-        return animePOPULAR;
+        return animePopular;
     } catch (err) {
         console.error(err);
         throw err;
     }
 };
-
-
-
