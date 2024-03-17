@@ -14,6 +14,7 @@ app.get('/animeList', async (request, response) => {
         const animeList = await fetchAnimeList();
         response.send(animeList);
     } catch (error) {
+        console.log(html);
         console.error(error);
         response.status(500).send('Internal Server Error');
     }
@@ -39,9 +40,19 @@ app.get('/animePopular', async (request, response) => {
     }
 });
 
+app.get('/watch', async (request , response) => {
+    try {
+        const watch = await fetchWatch();
+        response.send(watch)
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Internal Server Error')
+    }
+});
+
 const fetchAnimeList = async () => {
     try {
-        const response = await axios.get('https://www.gogoanime.fi/');
+        const response = await axios.get('https://anitaku.to/home.html');
         const html = response.data;
         const $ = cheerio.load(html);
         const animeList = [];
@@ -64,7 +75,7 @@ const fetchAnimeList = async () => {
 
 const fetchAnimeMovies = async () => {
     try {
-        const response = await axios.get('https://www.gogoanime.tw/anime-movies');
+        const response = await axios.get('https://anitaku.to/anime-movies.html');
         const html = response.data;
         const $ = cheerio.load(html);
         const animeMovie = [];
@@ -91,7 +102,7 @@ const fetchAnimeMovies = async () => {
 
 const fetchPopularAnime = async () => {
     try {
-        const response = await axios.get('https://www.gogoanime.tw/anime-movies');
+        const response = await axios.get('https://anitaku.to/popular.html');
         const html = response.data;
         const $ = cheerio.load(html);
         const animePopular = [];
@@ -115,3 +126,27 @@ const fetchPopularAnime = async () => {
         throw err;
     }
 };
+
+
+
+const fetchWatch = async () => {
+    try {
+        const response = await axios.get('https://anitaku.to/stitch-episode-25');
+        const html = response.data;
+        const $ = cheerio.load(html);
+        const watch = [];
+
+        $('.play-video iframe').each((index, element) => {
+            const src = $(element).attr('src');
+            if (src) {
+                watch.push(src);
+            }
+        });
+
+        console.log(watch);
+    } catch (error) {
+        console.error('Error fetching watch data:', error);
+    }
+};
+
+fetchWatch();
