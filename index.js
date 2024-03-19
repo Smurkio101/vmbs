@@ -136,7 +136,7 @@ const fetchWatch = async () => {
         const $ = cheerio.load(html);
         const watch = [];
 
-        $('.play-video iframe').each((index, element) => {
+        $('.play-video iframe').attr('src').each((index, element) => {
             const src = $(element).attr('src');
             if (src) {
                 watch.push(src);
@@ -148,5 +148,3 @@ const fetchWatch = async () => {
         console.error('Error fetching watch data:', error);
     }
 };
-
-fetchWatch();
