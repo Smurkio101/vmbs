@@ -6,8 +6,18 @@ const app = express();
 const PORT = 3001;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+    console.log(`Received request: ${req.method} ${req.originalUrl}`);
+    next();
+});
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
 
 app.listen(PORT, () => console.log(`Running Express Server on PORT ${PORT}!`));
+
+
 
 app.get('/animeList', async (request, response) => {
     try {
@@ -40,15 +50,24 @@ app.get('/animePopular', async (request, response) => {
     }
 });
 
-app.get('/watch', async (request , response) => {
+
+
+app.get('/watch/:slug', async (request, response, next) => {
     try {
-        const watch = await fetchWatch();
-        response.send(watch)
+        const { slug } = request.params;
+        const watchDetails = await fetchWatchAndEpisodes(slug);
+        if (watchDetails) {
+            response.send(watchDetails);
+        } else {
+            // Handling case where no content is found
+            response.status(404).send('Content not found');
+        }
     } catch (error) {
         console.error(error);
-        response.status(500).send('Internal Server Error')
+        next(error); // Pass errors to the error-handling middleware
     }
 });
+
 
 const fetchAnimeList = async () => {
     try {
@@ -129,22 +148,39 @@ const fetchPopularAnime = async () => {
 
 
 
-const fetchWatch = async () => {
+const fetchWatchAndEpisodes = async (slug) => {
     try {
-        const response = await axios.get('https://anitaku.to/stitch-episode-25');
+        const url = `https://anitaku.to/${encodeURIComponent(slug)}`;
+        const response = await axios.get(url);
         const html = response.data;
         const $ = cheerio.load(html);
-        const watch = [];
 
-        $('.play-video iframe').attr('src').each((index, element) => {
-            const src = $(element).attr('src');
-            if (src) {
-                watch.push(src);
-            }
+       
+        const embedLink = $('.play-video iframe').attr('src');
+
+       
+        const episodes = [];
+        $('#load_ep li').each((i, el) => {
+            const episodeSlug = $(el).find('a').attr('href').trim();
+            const episodeName = $(el).find('.name').text().trim();
+            const category = $(el).find('.cate').text().trim(); // SUB or DUB
+
+            episodes.push({
+                episodeName,
+                episodeSlug,
+                category
+            });
         });
 
-        console.log(watch);
+        return {
+            embedLink,
+            episodes
+        };
     } catch (error) {
-        console.error('Error fetching watch data:', error);
+        console.error('Error fetching watch and episode data:', error);
+        return null;
     }
 };
+
+
+
