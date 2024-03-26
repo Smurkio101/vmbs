@@ -59,15 +59,24 @@ app.get('/watch/:slug', async (request, response, next) => {
         if (watchDetails) {
             response.send(watchDetails);
         } else {
-            // Handling case where no content is found
+           
             response.status(404).send('Content not found');
         }
     } catch (error) {
         console.error(error);
-        next(error); // Pass errors to the error-handling middleware
+        next(error); 
     }
 });
 
+app.get('/ep', async (request ,response) =>{
+    try {
+        const ep = await fetchep();
+        response.send(ep);
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Internal Server Error');
+    }
+});
 
 const fetchAnimeList = async () => {
     try {
@@ -159,10 +168,10 @@ const fetchWatchAndEpisodes = async (slug) => {
         const embedLink = $('.play-video iframe').attr('src');
 
        
-        const episodes = [];
-        $('#load_ep li').each((i, el) => {
+        const episodes = []; 
+        $('.anime_video_body').each((i, el) => {
             const episodeSlug = $(el).find('a').attr('href').trim();
-            const episodeName = $(el).find('.name').text().trim();
+            const episodeName = $(el).find('.name a').text().trim();
             const category = $(el).find('.cate').text().trim(); // SUB or DUB
 
             episodes.push({
@@ -182,5 +191,27 @@ const fetchWatchAndEpisodes = async (slug) => {
     }
 };
 
+
+const fetchep = async () =>{
+    try{
+        const response = await axios.get('https://anitaku.to/popular.html');
+        const html = response.data;
+        const $ = cheerio.load(html);
+        const ep = [];
+
+       $('').each((index, element) => {
+            const anime = $(element);
+            const anime_title = anime.find('.name a').text().trim();
+            const anime_url = anime.find('.name a').attr('href');
+            const image_url = anime.find('img').attr('src');
+            const anime_released = anime.find('released').text;
+
+       })
+       return ep ;
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+};
 
 
