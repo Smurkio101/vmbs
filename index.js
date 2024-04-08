@@ -146,7 +146,7 @@ const fetchPopularAnime = async () => {
             const html = response.data;
             const $ = cheerio.load(html);
             
-            $('.last_episodes.loaddub li .type.ic-DUB').each((index, element) => {
+            $('.last_episodes.loaddub li').each((index, element) => {
                 const anime = $(element);
                 const anime_title = anime.find('.name a').text().trim();
                 const anime_url = anime.find('.name a').attr('href');
@@ -225,10 +225,14 @@ const fetchWatchAndEpisodes = async (baseSlug) => {
 
         // Assuming embedLink extraction remains the same
         const embedLink = $('.play-video iframe').attr('src');
+        const video_id = embedLink.split('/').pop();
+        
 
         return {
             embedLink,
-            episodes
+            episodes,
+            video_id
+            
         };
     } catch (error) {
         console.error('Error fetching watch and episode data:', error);
