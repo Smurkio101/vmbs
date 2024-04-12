@@ -225,14 +225,14 @@ const fetchWatchAndEpisodes = async (baseSlug) => {
         }
 
         // Assuming embedLink extraction remains the same
-        const video_id = $('.play-video iframe').attr('src');
-       // const video_id = embedLink.split('/').pop();
+        const embedLink = $('.play-video iframe').attr('src');
+        const video_id = embedLink.split('/').pop();
         
 
         return {
-            video_id,
+            embedLink,
             episodes,
-            
+            video_id
             
         };
     } catch (error) {
