@@ -2,6 +2,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const express = require('express');
 const puppeteer = require('puppeteer');
+const stream = require('stream');
 
 const app = express();
 const PORT = 3001;
@@ -224,14 +225,14 @@ const fetchWatchAndEpisodes = async (baseSlug) => {
         }
 
         // Assuming embedLink extraction remains the same
-        const embedLink = $('.play-video iframe').attr('src');
-        const video_id = embedLink.split('/').pop();
+        const video_id = $('.play-video iframe').attr('src');
+       // const video_id = embedLink.split('/').pop();
         
 
         return {
-            embedLink,
+            video_id,
             episodes,
-            video_id
+            
             
         };
     } catch (error) {
@@ -244,7 +245,7 @@ const fetchWatchAndEpisodes = async (baseSlug) => {
 
 
 
-;
+
 
 
 
