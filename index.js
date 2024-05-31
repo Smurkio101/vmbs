@@ -31,10 +31,12 @@ app.get('/search', async (req, res) => {
   
       const results = [];
       $('ul.listing.items li.video-block').each((index, element) => {
-        const name = $(element).find('div.name').text().trim();
-        const picture = $(element).find('div.picture img').attr('src');
-        const href = $(element).find('a').attr('href');
-        results.push({ name, picture, href });
+        const anime_title = $(element).find('div.name').text().trim();
+        const anime_img = $(element).find('div.picture img').attr('src');
+        const anime_url = $(element).find('a').attr('href');
+        const anime_id = anime_url.split('/').pop();
+        results.push({ anime_title, anime_img ,anime_id});
+
       });
   
       res.json(results);
