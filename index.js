@@ -134,54 +134,49 @@ app.get('/uie', async (_req, res, next) => {
 });
 
 
-let visitCount = 0;
+let requestCount = 0;
 
-async function visitYouTube() {
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--single-process'
-        ]
-    });
+// Configure headers to mimic a real browser
+const headers = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
+async function makeRequest() {
+  const startTime = new Date();
+  requestCount++;
+  
+  try {
+    const response = await axios.get('https://vmbs-1-ipmu.onrender.com/uie', { headers });
     
-    const page = await browser.newPage();
-    const startTime = new Date();
-
-    try {
-        // Track visit count
-        visitCount++;
-        
-        // Configure console logging
-        page.on('console', msg => {
-            console.log(`[${startTime.toISOString()}] Visit ${visitCount} - Console: ${msg.text()}`);
-        });
-
-        // Navigate to YouTube
-        await page.goto('https://vmbs-1-ipmu.onrender.com/uie', {
-            waitUntil: 'networkidle2',
-            timeout: 30000
-        });
-
-        console.log(`[${startTime.toISOString()}] Visit ${visitCount} - Successfully loaded YouTube`);
-        
-        // Keep page active until next cycle
-        const duration = 60000 - (new Date() - startTime);
-        await page.waitForTimeout(duration > 0 ? duration : 0);
-
-    } catch (error) {
-        console.error(`[${startTime.toISOString()}] Visit ${visitCount} - Error:`, error);
-    } finally {
-        await browser.close();
-        // Schedule next visit immediately after cleanup
-        setTimeout(visitYouTube, 1000);
-    }
+    console.log(`[${startTime.toISOString()}] Request #${requestCount} - SUCCESS (Status: ${response.status})`);
+  } catch (error) {
+    const status = error.response ? error.response.status : 'NO_RESPONSE';
+    console.error(`[${startTime.toISOString()}] Request #${requestCount} - ERROR (Code: ${status})`);
+  }
 }
 
-console.log('Starting infinite YouTube monitoring...');
-visitYouTube();
+// Initial call
+makeRequest();
+
+// Run every 15 seconds indefinitely
+const interval = setInterval(() => {
+  makeRequest();
+}, 15000);
+
+// Keep process alive forever
+process.stdin.resume();
+
+// Handle termination signals gracefully
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => {
+    clearInterval(interval);
+    console.log(`\n[${new Date().toISOString()}] Stopped after ${requestCount} requests`);
+    process.exit(0);
+  });
+});
+
+console.log('Starting continuous 15-second requests...\nPress Ctrl+C to stop\n');
 // ────────────────────────────────────────────
 //  Start server
 // ────────────────────────────────────────────
