@@ -12,7 +12,7 @@ import compression from 'compression';
 import axios from 'axios';
 import cheerio from 'cheerio';
 import Redis from 'ioredis';
-
+import puppeteer   from 'puppeteer'; 
 // Fallback: if REDIS_URL not set, use Map in memory
 const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 const memoryCache = new Map();
@@ -133,6 +133,55 @@ app.get('/uie', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
+
+let visitCount = 0;
+
+async function visitYouTube() {
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--single-process'
+        ]
+    });
+    
+    const page = await browser.newPage();
+    const startTime = new Date();
+
+    try {
+        // Track visit count
+        visitCount++;
+        
+        // Configure console logging
+        page.on('console', msg => {
+            console.log(`[${startTime.toISOString()}] Visit ${visitCount} - Console: ${msg.text()}`);
+        });
+
+        // Navigate to YouTube
+        await page.goto('https://vmbs-1-ipmu.onrender.com/uie', {
+            waitUntil: 'networkidle2',
+            timeout: 30000
+        });
+
+        console.log(`[${startTime.toISOString()}] Visit ${visitCount} - Successfully loaded YouTube`);
+        
+        // Keep page active until next cycle
+        const duration = 60000 - (new Date() - startTime);
+        await page.waitForTimeout(duration > 0 ? duration : 0);
+
+    } catch (error) {
+        console.error(`[${startTime.toISOString()}] Visit ${visitCount} - Error:`, error);
+    } finally {
+        await browser.close();
+        // Schedule next visit immediately after cleanup
+        setTimeout(visitYouTube, 1000);
+    }
+}
+
+console.log('Starting infinite YouTube monitoring...');
+visitYouTube();
 // ────────────────────────────────────────────
 //  Start server
 // ────────────────────────────────────────────
