@@ -51,5 +51,8 @@ app.get('/convert', async (req, res) => {
   }
 });
 
-/* Graceful shutdown */
-process.on('SIGINT', async () => { await context?.close(); process.exit(); });
+-process.on('SIGINT', async () => { await context?.close(); process.exit(); });
+-
+-app.listen(PORT, () => console.log(`🚀  API ready at http://localhost:${PORT}`));
++process.on('SIGINT', async () => { await context?.close(); process.exit(); });
++app.listen(PORT, () => console.log(`🚀  FastDL proxy on ${PORT}`));
