@@ -5,7 +5,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js & PORT=3000 node index.cjs",
+     "start": "node src/app.js"   , 
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
