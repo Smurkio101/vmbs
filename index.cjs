@@ -2,7 +2,7 @@
 const express   = require('express');
 const { chromium } = require('playwright');                // v1.44+
 const app  = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT 
 
 /* Launch one persistent browser the first time we’re called */
 let context, page;
