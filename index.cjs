@@ -2,7 +2,6 @@
 const express   = require('express');
 const { chromium } = require('playwright');                // v1.44+
 const app  = express();
-const PORT = process.env.PORT 
 
 /* Launch one persistent browser the first time we’re called */
 let context, page;
@@ -54,6 +53,3 @@ app.get('/convert', async (req, res) => {
 
 /* Graceful shutdown */
 process.on('SIGINT', async () => { await context?.close(); process.exit(); });
-
-app.listen(PORT, () =>
-  console.log(`FastDL proxy live ➜  http://localhost:${PORT}/convert?url=`));
