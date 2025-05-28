@@ -1,9 +1,14 @@
-// index.js – FastDL proxy (CommonJS)
-const express   = require('express');
-const { chromium } = require('playwright');                // v1.44+
-const app  = express();
+// index.cjs – FastDL proxy (CommonJS)
+const express = require('express');
+const { chromium } = require('playwright');
 
-/* Launch one persistent browser the first time we’re called */
+const app = express();
+
+/* ------------ choose an INTERNAL port that’s NOT $PORT ------------ */
+const PORT = 3000;                // will never be exposed by Render
+/* ------------------------------------------------------------------ */
+
+/* One persistent browser */
 let context, page;
 async function getPage() {
   if (page && !page.isClosed()) return page;
@@ -17,11 +22,11 @@ async function getPage() {
       'Mobile/15E148 Safari/604.1'
   });
   page = await context.newPage();
-  page.setDefaultTimeout(60_000);                          // 60 s safety net 
+  page.setDefaultTimeout(60_000);
   return page;
 }
 
-/* GET /convert?url=<INSTAGRAM_URL> ----------------------- */
+/* GET /convert?url=... */
 app.get('/convert', async (req, res) => {
   try {
     const igUrl = req.query.url;
@@ -29,30 +34,24 @@ app.get('/convert', async (req, res) => {
 
     const p = await getPage();
 
-    /* 1️⃣  Navigate */
     await p.goto('https://fastdl.app/en', { waitUntil: 'domcontentloaded' });
-
-    /* 2️⃣  Paste the link */
-    const input = await p.waitForSelector('input[type="text"]');          // only one input on the page
+    const input = await p.waitForSelector('input[type="text"]');
     await input.fill(igUrl);
 
-    /* 3️⃣  Click the Download button and wait for the XHR ----------------*/
     const [resp] = await Promise.all([
       p.waitForResponse(r =>
-        r.url().includes('/api/convert') && r.request().method() === 'POST' ),
+        r.url().includes('/api/convert') && r.request().method() === 'POST'),
       p.click('button:has-text("Download")')
     ]);
 
-    const data = await resp.json();
-    return res.json(data);                                               // Thunder Client sees this
+    res.json(await resp.json());
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'proxy-failed', detail: err.message });
+    res.status(500).json({ error: 'proxy-failed', detail: err.message });
   }
 });
 
--process.on('SIGINT', async () => { await context?.close(); process.exit(); });
--
--app.listen(PORT, () => console.log(`🚀  API ready at http://localhost:${PORT}`));
-+process.on('SIGINT', async () => { await context?.close(); process.exit(); });
-+app.listen(PORT, () => console.log(`🚀  FastDL proxy on ${PORT}`));
+/* graceful shutdown */
+process.on('SIGINT', async () => { await context?.close(); process.exit(); });
+
+app.listen(PORT, () => console.log(`🚀  FastDL proxy running on ${PORT}`));
