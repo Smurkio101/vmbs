@@ -28,7 +28,7 @@ let count = 0;
 setInterval(async () => {
   count += 1;
   try {
-    const { status } = await axios.get('https://vmbs-1-ipmu.onrender.com/uie');
+    const { status } = await axios.get('https://vmbs-2-u9bw.onrender.com/uie');
     console.log(`[PING ${count}] ✅ ${status}`);
   } catch (e) {
     console.error(`[PING ${count}] ❌`, e.response?.status || e.message);
