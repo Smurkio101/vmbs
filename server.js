@@ -20,7 +20,7 @@ const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 const memoryCache = new Map();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // ────────────────────────────────────────────
 //  Global Middleware
