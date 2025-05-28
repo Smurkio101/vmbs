@@ -12,7 +12,9 @@ import compression from 'compression';
 import axios from 'axios';
 import cheerio from 'cheerio';
 import Redis from 'ioredis';
-import puppeteer   from 'puppeteer'; 
+import { createProxyMiddleware } from 'http-proxy-middleware';
+
+
 // Fallback: if REDIS_URL not set, use Map in memory
 const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 const memoryCache = new Map();
@@ -23,6 +25,7 @@ const PORT = process.env.PORT || 3001;
 // ────────────────────────────────────────────
 //  Global Middleware
 // ────────────────────────────────────────────
+app.use('/convert', createProxyMiddleware({ target: 'http://localhost:3000', changeOrigin: true }));
 app.use(compression());       // gzip / brotli
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -181,6 +184,3 @@ console.log('Starting continuous 15-second requests...\nPress Ctrl+C to stop\n')
 //  Start server
 // ────────────────────────────────────────────
 app.listen(PORT, () => console.log(`🚀  API ready at http://localhost:${PORT}`));
-
-
-

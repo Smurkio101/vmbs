@@ -1,0 +1,1 @@
+printf 'node_modules\nnpm-debug.log\n.pw\n' > .dockerignore
