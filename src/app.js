@@ -35,7 +35,7 @@ setInterval(async () => {
   } catch (e) {
     console.error(`[PING ${count}] ❌`, e.response?.status || e.message);
   }
-}, 30_000);
+}, 60_000);
 
 /* ───────── start server ────────────── */
 app.listen(PORT, () =>
