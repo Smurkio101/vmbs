@@ -2,6 +2,7 @@ import express from 'express';
 import compression from 'compression';
 import { router as newsRouter }    from './news.js';
 import { router as convertRouter } from './convert.js';
+import { router as anime } from './anime.js';
 import axios from 'axios';
 
 const app  = express();
@@ -19,6 +20,7 @@ app.use((req, _res, next) => {
 /* ───────── route groups ────────────── */
 app.use('/',          newsRouter);     // /uie, /news/:slug, /
 app.use('/convert',   convertRouter);  // /convert?url=…
+app.use('/',          anime);
 
 /* ───────── 404 fallback ────────────── */
 app.use((req, res) => res.status(404).send('Not found'));
@@ -28,7 +30,7 @@ let count = 0;
 setInterval(async () => {
   count += 1;
   try {
-    const { status } = await axios.get('https://vmbs-2-u9bw.onrender.com/uie');
+    const { status } = await axios.get('https://vmbs-24ux.onrender.com/uie');
     console.log(`[PING ${count}] ✅ ${status}`);
   } catch (e) {
     console.error(`[PING ${count}] ❌`, e.response?.status || e.message);
