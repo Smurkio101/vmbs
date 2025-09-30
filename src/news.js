@@ -2,7 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import cheerio from 'cheerio';
 import Redis from 'ioredis';
-
+import cors from "cors";
 export const router = Router();
 
 /* ───────── cache helpers ───────── */
@@ -26,7 +26,7 @@ async function withCache(key, ttlSec, fn) {
 
 /* ───────── utils ───────── */
 const ORIGIN = 'https://www.cbr.com';
-
+ 
 function resolveUrl(u = '') {
   if (!u) return '';
   if (u.startsWith('//')) return 'https:' + u;

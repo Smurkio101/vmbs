@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import axios from 'axios';
 import cheerio from 'cheerio';
+import cors from 'cors';
 
 import moment from 'moment-timezone';
 
 export const router = Router();
+
+// Apply CORS on this router (do not use app.use here)
+router.use(cors());
 
 /* ------------------------------------ *
  * Helpers
@@ -32,8 +36,10 @@ async function fetchAnimeDetails(animeId) {
     const response = await axios.get(url, {
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      },
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+          'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+          'Chrome/91.0.4472.124 Safari/537.36'
+      }
     });
 
     const $ = cheerio.load(response.data);
@@ -43,19 +49,19 @@ async function fetchAnimeDetails(animeId) {
       id: animeId,
       title: {
         romaji: $('.text-xl.font-medium').text().trim(),
-        english: $('.text-lg').first().text().trim() || null,
+        english: $('.text-lg').first().text().trim() || null
       },
       imageUrl: $('.shrink-0 img').attr('src'),
       releaseDate: $('a[href^="/schedule?date="]').first().text().trim(),
       season: $('a[href*="/tv"]').text().trim(),
       rating: {
         score: $('.text-lg.font-medium').first().text().trim(),
-        count: $('.text-sm.text-base-content\\/75').last().text().trim(),
+        count: $('.text-sm.text-base-content\\/75').last().text().trim()
       },
       details: {},
       tags: [],
       studio: '',
-      description: '',
+      description: ''
     };
 
     // Extract format, source, episodes, and runtime
@@ -129,8 +135,10 @@ async function fetchAnimeVideos(animeId, category) {
     const response = await axios.get(url, {
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      },
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+          'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+          'Chrome/91.0.4472.124 Safari/537.36'
+      }
     });
     const $ = cheerio.load(response.data);
     const videos = [];
@@ -143,7 +151,7 @@ async function fetchAnimeVideos(animeId, category) {
         thumbnail: $el.find('img').attr('src'),
         embedUrl: $el.attr('data-video-embed-url'),
         uploadedAt: $el.attr('data-video-uploaded-at'),
-        youtubeUrl: $el.find('a').attr('href'),
+        youtubeUrl: $el.find('a').attr('href')
       });
     });
 
@@ -164,8 +172,10 @@ async function fetchAnimeStreams(animeId) {
     const response = await axios.get(url, {
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      },
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+          'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+          'Chrome/91.0.4472.124 Safari/537.36'
+      }
     });
     const $ = cheerio.load(response.data);
     const streams = [];
@@ -182,7 +192,7 @@ async function fetchAnimeStreams(animeId) {
       streams.push({
         service: $el.find('.link-hover.font-medium').text().trim(),
         url: $el.find('.link-hover.font-medium').attr('href'),
-        notes: notes,
+        notes: notes
       });
     });
 
@@ -200,14 +210,14 @@ async function getFullAnimeInfo(animeId) {
     const videos = {
       promos: await fetchAnimeVideos(animeId, 'promos'),
       spots: await fetchAnimeVideos(animeId, 'spots'),
-      music: await fetchAnimeVideos(animeId, 'music'),
+      music: await fetchAnimeVideos(animeId, 'music')
     };
     const streams = await fetchAnimeStreams(animeId);
 
     return {
       ...details,
       videos,
-      streams,
+      streams
     };
   } catch (error) {
     console.error(`Error getting full info for ${animeId}:`, error.message);
@@ -223,7 +233,7 @@ router.get('/anime/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Error fetching anime info',
-      message: error.message,
+      message: error.message
     });
   }
 });
@@ -242,7 +252,7 @@ async function fetchAnimeSchedule() {
           .find('.lc-timetable-day__heading .text-xl.opacity-75')
           .text()
           .trim(),
-        timeslots: [],
+        timeslots: []
       };
 
       $(element)
@@ -251,14 +261,12 @@ async function fetchAnimeSchedule() {
           const imageUrl = $(elem)
             .find("[data-schedule-anime-target='poster']")
             .attr('src');
-          const timestamp = parseInt($(elem).attr('data-timestamp')) * 1000; // Convert to milliseconds
+          const timestamp = parseInt($(elem).attr('data-timestamp')) * 1000; // ms
           const time = moment.tz(timestamp, 'America/Jamaica').format('h:mm A');
 
           const titleEl = $(elem).find('a');
-          const href = titleEl.attr('href') || null; // <-- Safely check for null
-
-          // Check if href is available before splitting
-          const anime_id = href ? href.split('/').pop() : null; // <-- Fix: only split if href is defined
+          const href = titleEl.attr('href') || null;
+          const anime_id = href ? href.split('/').pop() : null;
 
           const timeslot = {
             time: time,
@@ -268,7 +276,7 @@ async function fetchAnimeSchedule() {
               .trim(),
             episodeInfo: $(elem).find('.lc-tt-release-label').text().trim(),
             imageUrl: imageUrl ? imageUrl : 'No image available',
-            anime_id,
+            anime_id
           };
 
           if (timeslot.animeTitle) {
@@ -297,6 +305,261 @@ router.get('/anime-schedule', async (req, res) => {
   }
 });
 
+/* ------------------------------------ *
+ * LiveChart Search (English + Romaji)
+ * - Returns two sections in one response
+ * - English URL uses &titles=english
+ * - Romaji URL uses &titles=romaji
+ * - Adds type, date, rating
+ * - Image object excludes "sources"
+ * ------------------------------------ */
 
+const LIVECHART_BASE_URL = 'https://www.livechart.me';
 
+// With your app.js mounting this router at '/', the endpoints are:
+// - GET /livechart/search?q=...
+// - GET /livechart/search/:q
+router.get('/livechart/search', handleLivechartSearchRequest);
+router.get('/livechart/search/:q', handleLivechartSearchRequest);
 
+async function handleLivechartSearchRequest(req, res) {
+  try {
+    const qRaw =
+      typeof req.query.q === 'string' && req.query.q.trim()
+        ? req.query.q
+        : typeof req.params.q === 'string' && req.params.q.trim()
+        ? req.params.q
+        : '';
+
+    if (!qRaw) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Missing required search text: q',
+        examples: [
+          '/livechart/search?q=seishun buta yarou wa santa claus no yume wo minai',
+          '/livechart/search/seishun%20buta%20yarou%20wa%20santa%20claus%20no%20yume%20wo%20minai'
+        ]
+      });
+    }
+
+    // Build URLs (force titles mode explicitly)
+    const englishUrl = new URL('/search', LIVECHART_BASE_URL);
+    englishUrl.searchParams.set('q', qRaw);
+    englishUrl.searchParams.set('titles', 'english');
+
+    const romajiUrl = new URL('/search', LIVECHART_BASE_URL);
+    romajiUrl.searchParams.set('q', qRaw);
+    romajiUrl.searchParams.set('titles', 'romaji');
+
+    // Fetch both pages concurrently
+    const [enHtml, roHtml] = await Promise.all([
+      fetchHtmlLivechart(englishUrl.toString()),
+      fetchHtmlLivechart(romajiUrl.toString())
+    ]);
+
+    // Scrape with mode-aware title preference
+    const englishRaw = scrapeSearchResultsLivechart(enHtml, 'english');
+    const romajiRaw = scrapeSearchResultsLivechart(roHtml, 'romaji');
+
+    // Shape per section
+    const english = englishRaw.map((i) => ({
+      animeId: i.animeId,
+      titleEnglish: i.title,
+      href: i.href,
+      type: i.type,
+      date: i.date,
+      rating: i.rating,
+      image: i.image
+    }));
+
+    const romaji = romajiRaw.map((i) => ({
+      animeId: i.animeId,
+      titleRomaji: i.title,
+      href: i.href,
+      type: i.type,
+      date: i.date,
+      rating: i.rating,
+      image: i.image
+    }));
+
+    return res.json({
+      ok: true,
+      english: englishUrl.toString(),
+      romaji: romajiUrl.toString(),
+      query: qRaw,
+      count: english.length,
+      results: {
+        english,
+        romaji
+      }
+    });
+  } catch (err) {
+    const status = err.response?.status || 500;
+    return res.status(status).json({
+      ok: false,
+      message: 'Failed to scrape LiveChart search page',
+      error:
+        err.message ||
+        err.toString() ||
+        'Unknown error. The site may be blocking requests.'
+    });
+  }
+}
+
+async function fetchHtmlLivechart(url) {
+  const { data } = await axios.get(url, {
+    timeout: 15000,
+    headers: {
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,' +
+        'image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+      Referer: LIVECHART_BASE_URL + '/',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+        'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+        'Chrome/91.0.4472.124 Safari/537.36'
+    }
+  });
+  return data;
+}
+
+/**
+ * Scrape one search page.
+ * mode:
+ *  - 'english': prefer anchor (English page), then data-title, then img alt
+ *  - 'romaji' : prefer anchor (Romaji page), then img alt, then data-title
+ */
+function scrapeSearchResultsLivechart(html, mode = 'english') {
+  const $ = cheerio.load(html);
+
+  const items = $(
+    'div.callout.grouped-list.anime-list li.grouped-list-item.anime-item'
+  )
+    .map((_, el) => {
+      const $el = $(el);
+
+      // Anchor + title candidates
+      let $a = $el.find('a[data-anime-item-target="mainTitle"]').first();
+      if (!$a.length) {
+        $a = $el.find('.anime-item__body__title a').first();
+      }
+
+      const anchorTitle = ($a.text() || '').trim();
+      const dataTitle = ($el.attr('data-title') || '').trim();
+      const $img = $el.find('.anime-item__poster-wrap img').first();
+      const altTitle = ($img.attr('alt') || '').trim();
+
+      const title =
+        mode === 'romaji'
+          ? anchorTitle || altTitle || dataTitle
+          : anchorTitle || dataTitle || altTitle;
+
+      // Href
+      const relativeHref = $a.attr('href') || '';
+      const href = toAbsoluteUrlLivechart(relativeHref, LIVECHART_BASE_URL);
+
+      // Type "(TV, 13 eps)"
+      const type = (
+        $el.find('.anime-item__body__title .title-extra').first().text() || ''
+      ).trim();
+
+      // Date and rating
+      const date = (
+        $el
+          .find(
+            '.info > span[data-action*="anime-item#showPremiereDateTime"]'
+          )
+          .first()
+          .text() || ''
+      ).trim();
+
+      const $ratingSpan = $el.find('.info span.fake-link').first();
+      const ratingText = ($ratingSpan.text() || '').trim();
+      const ratingTitle = ($ratingSpan.attr('title') || '').trim();
+      let rating = null;
+      if (ratingText) {
+        const num = parseFloat(ratingText.replace(/[^\d.]/g, ''));
+        if (!Number.isNaN(num)) rating = num;
+      }
+      if (rating == null && ratingTitle) {
+        const m = ratingTitle.match(/([\d.]+)\s+out of 10/i);
+        if (m) rating = parseFloat(m[1]);
+      }
+
+      // Image (no "sources")
+      const imgSrc = $img.attr('src') || '';
+      const srcset = $img.attr('srcset') || '';
+      const parsed = parseSrcsetLivechart(srcset);
+      const image = {
+        alt: altTitle,
+        src: toAbsoluteUrlLivechart(parsed.small || imgSrc, LIVECHART_BASE_URL),
+        small: parsed.small
+          ? toAbsoluteUrlLivechart(parsed.small, LIVECHART_BASE_URL)
+          : toAbsoluteUrlLivechart(imgSrc, LIVECHART_BASE_URL),
+        large: parsed.large
+          ? toAbsoluteUrlLivechart(parsed.large, LIVECHART_BASE_URL)
+          : null
+      };
+
+      // Anime ID
+      const animeIdAttr = $el.attr('data-anime-id') || null;
+      const animeId =
+        animeIdAttr || extractAnimeIdFromHrefLivechart(href) || null;
+
+      return {
+        animeId,
+        title,
+        href,
+        type,
+        date,
+        rating,
+        image
+      };
+  })
+    .get();
+
+  return items;
+}
+
+function extractAnimeIdFromHrefLivechart(href) {
+  try {
+    const m = new URL(href, LIVECHART_BASE_URL).pathname.match(
+      /\/anime\/(\d+)/
+    );
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseSrcsetLivechart(srcset) {
+  const sources = (srcset || '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const parts = entry.split(/\s+/).filter(Boolean);
+      const url = parts[0] || '';
+      const descriptor = parts[1] || '';
+      return { url, descriptor };
+    });
+
+  const small =
+    sources.find((s) => s.descriptor === '1x')?.url ||
+    sources[0]?.url ||
+    '';
+  const large = sources.find((s) => s.descriptor === '2x')?.url || '';
+
+  return { small, large };
+}
+
+function toAbsoluteUrlLivechart(url, base) {
+  try {
+    return new URL(url, base).toString();
+  } catch {
+    return url;
+  }
+}
